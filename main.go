@@ -5,14 +5,16 @@ import (
 	"net/http"
 )
 
-const PORT = "8080"
+const port = "8080"
+const rootFilePath = "."
 
 func main() {
 	mux := http.NewServeMux()
+	mux.Handle("/", http.FileServer(http.Dir(rootFilePath)))
 	srv := http.Server{
-		Addr:    ":" + PORT,
+		Addr:    ":" + port,
 		Handler: mux,
 	}
-	log.Printf("Server running on port: %s", PORT)
+	log.Printf("Serving files from %s on port: %s", rootFilePath, port)
 	log.Fatal(srv.ListenAndServe())
 }
