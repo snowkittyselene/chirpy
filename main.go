@@ -28,10 +28,6 @@ func (cfg *apiConfig) handlerCountRequests(w http.ResponseWriter, _ *http.Reques
 	w.Write([]byte(hitCount))
 }
 
-func (cfg *apiConfig) handlerReset(w http.ResponseWriter, r *http.Request) {
-	cfg.fileserverHits.Store(0)
-}
-
 func main() {
 	mux := http.NewServeMux()
 	handler := http.StripPrefix("/app", http.FileServer(http.Dir(rootFilePath)))
@@ -48,10 +44,4 @@ func main() {
 	}
 	log.Printf("Serving files from %s on port: %s", rootFilePath, port)
 	log.Fatal(srv.ListenAndServe())
-}
-
-func handlerReady(w http.ResponseWriter, _ *http.Request) {
-	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(http.StatusText(http.StatusOK)))
 }
