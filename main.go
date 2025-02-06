@@ -25,15 +25,17 @@ func main() {
 		fileserverHits: atomic.Int32{},
 	}
 	mux.Handle("/app/", apiCfg.middlewareMetricsInc(handler))
-	mux.HandleFunc("/healthz/", func(w http.ResponseWriter, req *http.Request) {
-		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(http.StatusText(http.StatusOK)))
-	})
+	mux.HandleFunc("/healthz/", handlerReady)
 	srv := http.Server{
 		Addr:    ":" + port,
 		Handler: mux,
 	}
 	log.Printf("Serving files from %s on port: %s", rootFilePath, port)
 	log.Fatal(srv.ListenAndServe())
+}
+
+func handlerReady(w http.ResponseWriter, _ *http.Request) {
+	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(http.StatusText(http.StatusOK)))
 }
