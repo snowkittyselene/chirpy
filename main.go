@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"sync/atomic"
@@ -14,8 +15,21 @@ type apiConfig struct {
 }
 
 func (cfg *apiConfig) middlewareMetricsInc(next http.Handler) http.Handler {
-	cfg.fileserverHits.Add(1)
-	return next
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		cfg.fileserverHits.Add(1)
+		next.ServeHTTP(w, r)
+	})
+}
+
+func (cfg *apiConfig) handlerCountRequests(w http.ResponseWriter, _ *http.Request) {
+	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+	w.WriteHeader(http.StatusOK)
+	hitCount := fmt.Sprintf("Hits: %d", cfg.fileserverHits.Load())
+	w.Write([]byte(hitCount))
+}
+
+func (cfg *apiConfig) handlerReset(w http.ResponseWriter, r *http.Request) {
+	cfg.fileserverHits.Store(0)
 }
 
 func main() {
@@ -25,7 +39,9 @@ func main() {
 		fileserverHits: atomic.Int32{},
 	}
 	mux.Handle("/app/", apiCfg.middlewareMetricsInc(handler))
-	mux.HandleFunc("/healthz/", handlerReady)
+	mux.HandleFunc("/healthz", handlerReady)
+	mux.HandleFunc("/metrics", apiCfg.handlerCountRequests)
+	mux.HandleFunc("/reset", apiCfg.handlerReset)
 	srv := http.Server{
 		Addr:    ":" + port,
 		Handler: mux,
