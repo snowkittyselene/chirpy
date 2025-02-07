@@ -35,9 +35,9 @@ func main() {
 		fileserverHits: atomic.Int32{},
 	}
 	mux.Handle("/app/", apiCfg.middlewareMetricsInc(handler))
-	mux.HandleFunc("/healthz", handlerReady)
-	mux.HandleFunc("/metrics", apiCfg.handlerCountRequests)
-	mux.HandleFunc("/reset", apiCfg.handlerReset)
+	mux.HandleFunc("GET /healthz", handlerReady)
+	mux.HandleFunc("GET /metrics", apiCfg.handlerCountRequests)
+	mux.HandleFunc("POST /reset", apiCfg.handlerReset)
 	srv := http.Server{
 		Addr:    ":" + port,
 		Handler: mux,
