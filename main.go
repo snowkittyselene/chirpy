@@ -19,6 +19,7 @@ const rootFilePath = "."
 type apiConfig struct {
 	fileserverHits atomic.Int32
 	queries        *database.Queries
+	platform       string
 }
 
 func (cfg *apiConfig) middlewareMetricsInc(next http.Handler) http.Handler {
@@ -38,6 +39,7 @@ func (cfg *apiConfig) handlerCountRequests(w http.ResponseWriter, _ *http.Reques
 func main() {
 	godotenv.Load()
 	dbUrl := os.Getenv("DB_URL")
+	platform := os.Getenv("PLATFORM")
 	db, err := sql.Open("postgres", dbUrl)
 	if err != nil {
 		log.Fatalf("error opening database: %s", err)
@@ -49,11 +51,13 @@ func main() {
 	apiCfg := apiConfig{
 		fileserverHits: atomic.Int32{},
 		queries:        dbQueries,
+		platform:       platform,
 	}
 	mux.Handle("/app/", apiCfg.middlewareMetricsInc(handler))
 
 	mux.HandleFunc("GET /api/healthz", handlerReady)
 	mux.HandleFunc("POST /api/validate_chirp", handlerValidation)
+	mux.HandleFunc("POST /api/users", apiCfg.handlerAddUser)
 
 	mux.HandleFunc("GET /admin/metrics", apiCfg.handlerCountRequests)
 	mux.HandleFunc("POST /admin/reset", apiCfg.handlerReset)
