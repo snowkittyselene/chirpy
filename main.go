@@ -18,7 +18,7 @@ const rootFilePath = "."
 
 type apiConfig struct {
 	fileserverHits atomic.Int32
-	queries        *database.Queries
+	db             *database.Queries
 	platform       string
 }
 
@@ -50,7 +50,7 @@ func main() {
 	handler := http.StripPrefix("/app", http.FileServer(http.Dir(rootFilePath)))
 	apiCfg := apiConfig{
 		fileserverHits: atomic.Int32{},
-		queries:        dbQueries,
+		db:             dbQueries,
 		platform:       platform,
 	}
 	mux.Handle("/app/", apiCfg.middlewareMetricsInc(handler))

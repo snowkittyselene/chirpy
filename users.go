@@ -22,7 +22,7 @@ func (cfg *apiConfig) handlerAddUser(w http.ResponseWriter, r *http.Request) {
 		respondError(w, http.StatusInternalServerError, "Couldn't decode request", err)
 		return
 	}
-	u, err := cfg.queries.CreateUser(r.Context(), email.Email)
+	u, err := cfg.db.CreateUser(r.Context(), email.Email)
 	if err != nil {
 		respondError(w, http.StatusInternalServerError, "Couldn't add user to database", err)
 		return
