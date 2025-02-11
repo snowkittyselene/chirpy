@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"net/http"
 	"strings"
 	"testing"
 	"time"
@@ -71,5 +72,25 @@ func TestCheckJWTInvalidWrongSecret(t *testing.T) {
 		t.Fatalf("Expected expired token")
 	} else if !strings.Contains(err.Error(), "signature is invalid") {
 		t.Fatalf("Expected error: signature is invalid, got %v", err)
+	}
+}
+
+func TestCheckBearerValid(t *testing.T) {
+	header := http.Header{}
+	header.Add("Authorization", "Bearer tokentest")
+	token, err := GetBearerToken(header)
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+	if token != "tokentest" {
+		t.Fatalf("expected 'tokentest', got %s", token)
+	}
+}
+
+func TestCheckBearerNoBearer(t *testing.T) {
+	header := http.Header{}
+	token, err := GetBearerToken(header)
+	if err == nil {
+		t.Fatalf("expected no return, got %v", token)
 	}
 }

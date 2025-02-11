@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/snowkittyselene/chirpy/internal/auth"
 	"github.com/snowkittyselene/chirpy/internal/database"
 )
 
@@ -20,11 +21,20 @@ type Chirp struct {
 func (cfg *apiConfig) handlerAddChirp(w http.ResponseWriter, r *http.Request) {
 	decoder := json.NewDecoder(r.Body)
 	req := struct {
-		Body   string    `json:"body"`
-		UserID uuid.UUID `json:"user_id"`
+		Body string `json:"body"`
 	}{}
 	if err := decoder.Decode(&req); err != nil {
 		respondError(w, http.StatusInternalServerError, "Error decoding request", err)
+		return
+	}
+	token, err := auth.GetBearerToken(r.Header)
+	if err != nil {
+		respondError(w, http.StatusUnauthorized, "Could not find valid JWT", err)
+		return
+	}
+	userID, err := auth.ValidateJWT(token, cfg.secret)
+	if err != nil {
+		respondError(w, http.StatusUnauthorized, "Invalid JWT", err)
 		return
 	}
 	if len(req.Body) > 140 {
@@ -32,7 +42,7 @@ func (cfg *apiConfig) handlerAddChirp(w http.ResponseWriter, r *http.Request) {
 	}
 	newChirp, err := cfg.db.AddChirp(r.Context(), database.AddChirpParams{
 		Body:   removeBadWords(req.Body),
-		UserID: req.UserID,
+		UserID: userID,
 	})
 	if err != nil {
 		respondError(w, http.StatusInternalServerError, "Error adding Chirp to database", err)
