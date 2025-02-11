@@ -1,7 +1,11 @@
 package auth
 
 import (
+	"strings"
 	"testing"
+	"time"
+
+	"github.com/google/uuid"
 )
 
 func TestCheckHashEqual(t *testing.T) {
@@ -23,5 +27,49 @@ func TestCheckHashNotEqual(t *testing.T) {
 	}
 	if err = CheckPasswordHash("password", hash); err == nil {
 		t.Fatalf("Password is correct, shouldn't be")
+	}
+}
+
+func TestCheckJWTValid(t *testing.T) {
+	id := uuid.New()
+	token, err := MakeJWT(id, "secret", 5*time.Second)
+	if err != nil {
+		t.Fatalf("Error generating token: %v", err)
+	}
+	returnedID, err := ValidateJWT(token, "secret")
+	if err != nil {
+		t.Fatalf("Error validating token: %v", err)
+	}
+	if id != returnedID {
+		t.Fatalf("Expected IDs to match")
+	}
+}
+
+func TestCheckJWTInvalidExpired(t *testing.T) {
+	id := uuid.New()
+	token, err := MakeJWT(id, "secret", 5*time.Millisecond)
+	if err != nil {
+		t.Fatalf("Error generating token; %v", err)
+	}
+	time.Sleep(10 * time.Millisecond)
+	_, err = ValidateJWT(token, "secret")
+	if err == nil {
+		t.Fatalf("Expected expired token")
+	} else if !strings.Contains(err.Error(), "token is expired") {
+		t.Fatalf("Expected error: token is expired, got %v", err)
+	}
+}
+
+func TestCheckJWTInvalidWrongSecret(t *testing.T) {
+	id := uuid.New()
+	token, err := MakeJWT(id, "secret", 5*time.Second)
+	if err != nil {
+		t.Fatalf("Error generating token: %v", err)
+	}
+	_, err = ValidateJWT(token, "terces")
+	if err == nil {
+		t.Fatalf("Expected expired token")
+	} else if !strings.Contains(err.Error(), "signature is invalid") {
+		t.Fatalf("Expected error: signature is invalid, got %v", err)
 	}
 }
