@@ -146,6 +146,15 @@ func (cfg *apiConfig) handlerUpdateUser(w http.ResponseWriter, r *http.Request) 
 }
 
 func (cfg *apiConfig) handlerUpgradeUser(w http.ResponseWriter, r *http.Request) {
+	apiKey, err := auth.GetAPIKey(r.Header)
+	if err != nil {
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+	if apiKey != cfg.apiKey {
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
 	request := struct {
 		Event string `json:"event"`
 		Data  struct {

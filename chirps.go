@@ -59,10 +59,27 @@ func (cfg *apiConfig) handlerAddChirp(w http.ResponseWriter, r *http.Request) {
 }
 
 func (cfg *apiConfig) handlerGetAllChirps(w http.ResponseWriter, r *http.Request) {
-	chirps, err := cfg.db.GetAllChirps(r.Context())
-	if err != nil {
-		respondError(w, http.StatusInternalServerError, "Error retrieving Chirps", err)
-		return
+	var chirps []database.Chirp
+	if userID := r.URL.Query().Get("author_id"); userID != "" {
+		id, err := uuid.Parse(userID)
+		if err != nil {
+			respondError(w, http.StatusInternalServerError, "Error getting ID", err)
+			return
+		}
+		chirpsList, err := cfg.db.GetChirpsByUser(r.Context(), id)
+		if err != nil {
+			respondError(w, http.StatusInternalServerError, "Error retrieving Chirps", err)
+			return
+		}
+		chirps = append(chirps, chirpsList...)
+
+	} else {
+		chirpsList, err := cfg.db.GetAllChirps(r.Context())
+		if err != nil {
+			respondError(w, http.StatusInternalServerError, "Error retrieving Chirps", err)
+			return
+		}
+		chirps = append(chirps, chirpsList...)
 	}
 	response := []Chirp{}
 	for _, chirp := range chirps {

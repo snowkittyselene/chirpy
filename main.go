@@ -21,6 +21,7 @@ type apiConfig struct {
 	db             *database.Queries
 	platform       string
 	secret         string
+	apiKey         string
 }
 
 func (cfg *apiConfig) middlewareMetricsInc(next http.Handler) http.Handler {
@@ -42,6 +43,7 @@ func main() {
 	dbUrl := os.Getenv("DB_URL")
 	platform := os.Getenv("PLATFORM")
 	secret := os.Getenv("TOKEN_SECRET")
+	apiKey := os.Getenv("POLKA_KEY")
 	db, err := sql.Open("postgres", dbUrl)
 	if err != nil {
 		log.Fatalf("error opening database: %s", err)
@@ -55,6 +57,7 @@ func main() {
 		db:             dbQueries,
 		platform:       platform,
 		secret:         secret,
+		apiKey:         apiKey,
 	}
 	mux.Handle("/app/", apiCfg.middlewareMetricsInc(handler))
 
